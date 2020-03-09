@@ -1,0 +1,7 @@
+*.o
+*.a
+vs
+vsc
+*.vs
+tags
+.root
