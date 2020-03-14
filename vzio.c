@@ -1,0 +1,65 @@
+#define vzio_c
+#define VS_CORE
+
+
+
+#include <string.h>
+
+#include "vs.h"
+
+#include "vlimits.h"
+#include "vmem.h"
+#include "vstate.h"
+#include "vzio.h"
+
+// 用于填充ZIO对象的缓存区 当z->n为0 如果要从ZIO中继续读取需要调用该函数
+// 调用reader函数 ZIO修改对象中的n和size
+int vsZ_fill (ZIO *z) {
+  size_t size;
+  vs_State *L = z->L;
+  const char *buff;
+  buff = z->reader(L, z->data, &size); // getF 从z->data中读取内容 size为读取到的长度 buff为读取到的内容
+  if (buff == NULL || size == 0) // 读取结束
+    return EOZ;
+  z->n = size - 1;  /* discount char being returned 使用reader读取了size个 最后返回了一个 所以还剩size-1 */
+  z->p = buff;
+  // 上面让p指向了buff 返回了一个值那么p要后移一个
+  return cast_uchar(*(z->p++));  // *p++ 与 *(p++)一样 得到*p的值再对p自增
+}
+
+
+// 初始化一个ZIO对象
+// 这个函数只有在vs_load中的一次调用,reader其实就是getF函数
+void vsZ_init (vs_State *L, ZIO *z, vs_Reader reader, void *data) {
+  z->L = L;
+  z->reader = reader;
+  z->data = data;
+  z->n = 0;
+  z->p = NULL;
+}
+
+
+// 从z中读取n个字符到b中
+// 返回值是还需要读取的字符数,如果读取完成就返回0
+size_t vsZ_read (ZIO *z, void *b, size_t n) {
+  while (n) {
+    size_t m;
+    if (z->n == 0) {  /* no bytes in buffer? 剩余可以直接读取的部分为0 */
+      if (vsZ_fill(z) == EOZ)  /* try to read more 尝试填充缓存区 */
+        return n;  /* no more input; return number of missing bytes 已经读取到底了直接返回n */
+      else {
+        // 填充成功了 vsZ_fill默认会返回一个字符 这里将默认消耗的字符放回去
+        z->n++;  /* vsZ_fill consumed first byte; put it back */
+        z->p--;
+      }
+    }
+    // m就是这一轮读取的字节数 取n和z->n的最小值
+    m = (n <= z->n) ? n : z->n;  /* min. between n and z->n */
+    memcpy(b, z->p, m);
+    z->n -= m;
+    z->p += m;
+    b = (char *)b + m;
+    n -= m;
+  }
+  return 0;
+}
