@@ -33,8 +33,8 @@
 // 与RESERVED对应的字符串类型名称
 static const char *const vsX_tokens [] = {
     "and", "break", "do", "else", "elseif",
-    "end", "false", "for", "function", "goto", "if",
-    "in", "local", "nil", "not", "or", "repeat",
+    "false", "for", "function", "goto", "if",
+    "in", "let", "nil", "not", "or", "repeat",
     "return", "then", "true", "until", "while",
     "//", "..", "...", "==", ">=", "<=", "~=",
     "<<", ">>", "::", "<eof>",

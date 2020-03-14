@@ -834,13 +834,13 @@ static void close_func (LexState *ls) {
 ** so it is handled in separate.
 */
 // 检查当前符号是块结束的符号
-// 也就是检查当前符号是否是TK_ELSE,TK_ELSEIF,TK_END,TK_EOS,TK_UNTIL
+// 也就是检查当前符号是否是TK_ELSE,TK_ELSEIF,TK_EOS,TK_UNTIL
 // 如果是则返回1 否则返回0
 // 由于until表示句法上的结束,吊饰没有关闭变量的作用域所以单独处理,withuntil标记是否结束块
 static int block_follow (LexState *ls, int withuntil) {
   switch (ls->t.token) {
     case TK_ELSE: case TK_ELSEIF:
-    case TK_END: case TK_EOS:
+    case '}': case TK_EOS:
       return 1;
     case TK_UNTIL: return withuntil;
     default: return 0;
@@ -851,7 +851,7 @@ static int block_follow (LexState *ls, int withuntil) {
 // 识别多条语句 可以发现vs支持语句使用;(分号)分割
 static void statlist (LexState *ls) {
   /* statlist -> { stat [';'] } */
-  // 读取到TK_ELSE,TK_ELSEIF,TK_END,TK_EOS,TK_UNTIL停止循环
+  // 读取到TK_ELSE,TK_ELSEIF,TK_EOS,TK_UNTIL停止循环
   // 在每次调用statement的时候都有fs->nactvar==fs->freereg
   while (!block_follow(ls, 1)) {
     // 识别到return符号就继续识别这条语句 但是识别完成直接返回下面没必要识别了
@@ -1122,9 +1122,10 @@ static void body (LexState *ls, expdesc *e, int ismethod, int line) {
   }
   parlist(ls);  // 识别函数参数
   checknext(ls, ')'); // 识别右括号下一个符号
+  checknext(ls, '{'); // 识别右括号下一个符号
   statlist(ls);       // 开始识别函数内部的语句
   new_fs.f->lastlinedefined = ls->linenumber;  // 标记函数结束的行号
-  check_match(ls, TK_END, TK_FUNCTION, line);
+  check_match(ls, '}', '{', line);
   // 为外部函数生成OP_CLOSURE指令 参数A是freereg
   codeclosure(ls, e);
   // open_func与close_func是一对同时调用
@@ -1750,14 +1751,14 @@ static void whilestat (LexState *ls, int line) {
   condexit = cond(ls);
   // 进入块, 1标记这是循环块
   enterblock(fs, &bl, 1);
-  // 跳过do
-  checknext(ls, TK_DO);
+  // 跳过{
+  checknext(ls, '{');
   // 识别block
   block(ls);
   // 生成一条跳转到while语句开始位置的OP_JMP指令
   vsK_jumpto(fs, whileinit);
   // 识别end
-  check_match(ls, TK_END, TK_WHILE, line);
+  check_match(ls, '}', '{', line);
   // 退出当前块
   leaveblock(fs);
   // while语句识别完毕, 条件表达式的falselist使用下一条指令回填
@@ -1815,7 +1816,7 @@ static void forbody (LexState *ls, int base, int line, int nvars, int isnum) {
   int prep, endfor;
   // 两种for循环都有三个伪变量,由new_localvarliteral定义
   adjustlocalvars(ls, 3);  /* control variables */
-  checknext(ls, TK_DO);
+  checknext(ls, '{');
   // 第一种for循环 循环体包裹在OP_FORPREP和OP_FORLOOP之间
   // 第二种for循环 循环体包裹在OP_JMP和连续的OP_TFORCALL与OP_TFORLOOP之间
   // prep可能是OP_FORPREP指令或者OP_JMP指令,都是A sBx类型指令,两者的sBx参数含义一致,都是跳转的目标位置
@@ -1939,13 +1940,13 @@ static void forstat (LexState *ls, int line) {
     case ',': case TK_IN: forlist(ls, varname); break;
     default: vsX_syntaxerror(ls, "'=' or 'in' expected");
   }
-  check_match(ls, TK_END, TK_FOR, line);
+  check_match(ls, '}', '{', line);
   leaveblock(fs);  /* loop scope ('break' jumps to this point) */
 }
 
 
 // 识别 '[IF|ELSEIF] cond THEN block' 结构 注意不包括else块
-static void test_then_block (LexState *ls, int *escapelist) {
+static void test_then_block (LexState *ls, int *escapelist, int line) {
   /* test_then_block -> [IF | ELSEIF] cond THEN block */
   BlockCnt bl;
   FuncState *fs = ls->fs;
@@ -1954,7 +1955,7 @@ static void test_then_block (LexState *ls, int *escapelist) {
   int jf;  /* instruction to skip 'then' code (if condition is false) */
   vsX_next(ls);  /* skip IF or ELSEIF 跳过if或者elseif */
   expr(ls, &v);  /* read condition 识别需要if判断的条件表达式 */
-  checknext(ls, TK_THEN);  // 跳过then 识别下一个符号
+  checknext(ls, '{');  // 跳过then 识别下一个符号
   // 特殊情况 识别到goto和break
   if (ls->t.token == TK_GOTO || ls->t.token == TK_BREAK) {
     vsK_goiffalse(ls->fs, &v);  /* will jump to label if condition is true */
@@ -1981,6 +1982,7 @@ static void test_then_block (LexState *ls, int *escapelist) {
   }
   // 识别块内的语句
   statlist(ls);  /* 'then' part */
+  check_match(ls, '}', '{', line);
   leaveblock(fs);  // 在上面的if判断中执行了enterblock
   // 执行完当前if或elseif块之后需要跳转到整个if语句结束位置
   // 所以如果下面还有else或者elseif那么就生成一条跳转指令
@@ -2001,12 +2003,14 @@ static void ifstat (LexState *ls, int line) {
   // 一条记录所有需要跳转到if语句结束后第一条指令的跳转指令的回填链
   int escapelist = NO_JUMP;  /* exit list for finished parts */
   // 识别第一个if块
-  test_then_block(ls, &escapelist);  /* IF cond THEN block */
+  test_then_block(ls, &escapelist, line);  /* IF cond THEN block */
   while (ls->t.token == TK_ELSEIF)  // 识别每个elseif块
-    test_then_block(ls, &escapelist);  /* ELSEIF cond THEN block */
-  if (testnext(ls, TK_ELSE))  // 识别可能存在的else块
+    test_then_block(ls, &escapelist, line);  /* ELSEIF cond THEN block */
+  if (testnext(ls, TK_ELSE)){
+    checknext(ls, '{');  // 跳过{开始识别 内部结构
     block(ls);  /* 'else' part */
-  check_match(ls, TK_END, TK_IF, line);
+    check_match(ls, '}', '{', line);
+  }
   // if语句已经结束,下一条语句的位置就是escapelist回填的位置,将escapelist加入fs->jpc
   vsK_patchtohere(fs, escapelist);  /* patch escape list to 'if' end */
 }
@@ -2172,12 +2176,6 @@ static void statement (LexState *ls) {
     }
     case TK_WHILE: {  /* stat -> whilestat */
       whilestat(ls, line);
-      break;
-    }
-    case TK_DO: {  /* stat -> DO block END */
-      vsX_next(ls);  /* skip DO */
-      block(ls);
-      check_match(ls, TK_END, TK_DO, line);
       break;
     }
     case TK_FOR: {  /* stat -> forstat */

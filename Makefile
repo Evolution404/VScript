@@ -1,7 +1,7 @@
 # Makefile for building VS
 
 CC= gcc -std=gnu99
-CFLAGS= -O2 -Wall -Wextra
+CFLAGS= -O2 -Wall -Wextra -g
 LIBS= -lm -lreadline
 
 RM= rm -f

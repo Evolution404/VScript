@@ -20,7 +20,7 @@ enum RESERVED {
   /* terminal symbols denoted by reserved words 以保留字形式表示的终结符 */
   // 这些枚举值从257开始 避免前256占用了ascii字符
   TK_AND = FIRST_RESERVED, TK_BREAK,
-  TK_DO, TK_ELSE, TK_ELSEIF, TK_END, TK_FALSE, TK_FOR, TK_FUNCTION,
+  TK_DO, TK_ELSE, TK_ELSEIF, TK_FALSE, TK_FOR, TK_FUNCTION,
   TK_GOTO, TK_IF, TK_IN, TK_LOCAL, TK_NIL, TK_NOT, TK_OR, TK_REPEAT,
   TK_RETURN, TK_THEN, TK_TRUE, TK_UNTIL, TK_WHILE,
   /* other terminal symbols 其他终结符 */
