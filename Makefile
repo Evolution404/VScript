@@ -12,7 +12,7 @@ CORE_O=	vapi.o vcode.o vdebug.o vdo.o vdump.o vfunc.o vgc.o vlex.o \
 	vundump.o vvm.o vzio.o
 #LIB_O=	vauxlib.o vbaselib.o vbitlib.o vcorolib.o vdblib.o violib.o \
 	vmathlib.o voslib.o vstrlib.o vtablib.o vutf8lib.o voadlib.o vinit.o
-LIB_O=	vauxlib.o vbaselib.o vinit.o
+LIB_O=	vauxlib.o vbaselib.o vinit.o vtablib.o
 BASE_O= $(CORE_O) $(LIB_O)
 
 VS_T=	vs
@@ -44,7 +44,7 @@ vapi.o: vapi.c vs.h vsconf.h vapi.h vlimits.h vstate.h \
  vtable.h vundump.h vvm.h
 vauxlib.o: vauxlib.c vs.h vsconf.h vauxlib.h
 vbaselib.o: vbaselib.c vs.h vsconf.h vauxlib.h vslib.h
-#vtablib.o: vtablib.c vs.h vsconf.h vauxlib.h vslib.h
+vtablib.o: vtablib.c vs.h vsconf.h vauxlib.h vslib.h
 #violib.o: violib.c vs.h vsconf.h vauxlib.h vslib.h
 #voslib.o: voslib.c vs.h vsconf.h vauxlib.h vslib.h
 #vstrlib.o: vstrlib.c vs.h vsconf.h vauxlib.h vslib.h
@@ -85,7 +85,7 @@ vstring.o: vstring.c vs.h vsconf.h vdebug.h vstate.h \
 vtable.o: vtable.c vs.h vsconf.h vdebug.h vstate.h vobject.h \
  vlimits.h vzio.h vmem.h vdo.h vgc.h vstring.h vtable.h vvm.h
 vs.o: vs.c vs.h vsconf.h vauxlib.h vslib.h
-#vsc.o: vsc.c vs.h vsconf.h vauxlib.h vobject.h vlimits.h \
+vsc.o: vsc.c vs.h vsconf.h vauxlib.h vobject.h vlimits.h \
  vstate.h vzio.h vmem.h vundump.h vdebug.h vopcodes.h
 vundump.o: vundump.c vs.h vsconf.h vdebug.h vstate.h \
  vobject.h vlimits.h vzio.h vmem.h vdo.h vfunc.h vstring.h vgc.h \

@@ -17,7 +17,7 @@
 // 例如访问math模块就在_G.math下, base模块名称是_G所以直接暴露出来不需要模块名
 static const vsL_Reg loadedlibs[] = {
   {"_G", vsopen_base},
-//  {VS_TABLIBNAME, vsopen_table},
+  {VS_TABLIBNAME, vsopen_table},
 //  {VS_IOLIBNAME, vsopen_io},
 //  {VS_OSLIBNAME, vsopen_os},
 //  {VS_STRLIBNAME, vsopen_string},

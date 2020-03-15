@@ -103,7 +103,7 @@ VSLIB_API void (vsL_requiref) (vs_State *L, const char *modname,
   vs_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
 
 #define vsL_newlib(L,l)  \
-  (vsL_checkversion(L), vsL_newlibtable(L,l), vsL_setfuncs(L,l,0))
+  (vsL_newlibtable(L,l), vsL_setfuncs(L,l,0))
 
 #define vsL_argcheck(L, cond,arg,extramsg)	\
 		((void)((cond) || vsL_argerror(L, (arg), (extramsg))))

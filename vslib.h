@@ -10,9 +10,9 @@
 
 VSMOD_API int (vsopen_base) (vs_State *L);
 
-//#define VS_TABLIBNAME	"table"
-//VSMOD_API int (vsopen_table) (vs_State *L);
-//
+#define VS_TABLIBNAME	"table"
+VSMOD_API int (vsopen_table) (vs_State *L);
+
 //#define VS_IOLIBNAME	"io"
 //VSMOD_API int (vsopen_io) (vs_State *L);
 //
